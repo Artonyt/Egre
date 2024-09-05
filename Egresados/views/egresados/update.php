@@ -18,28 +18,48 @@ if (isset($_GET['id'])) {
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Recibir y validar los datos del formulario
-        $mes = $_POST['mes'];
-        $nombres = $_POST['nombres'];
-        $tipo_documento = $_POST['tipo_documento'];
-        $numero_documento = $_POST['numero_documento'];
-        $lugar_residencia = $_POST['lugar_residencia'];
-        $direccion_residencia = $_POST['direccion_residencia'];
-        $correo_electronico = $_POST['correo_electronico'];
-        $telefono_celular = $_POST['telefono_celular'];
-        $ocupacion_actual = $_POST['ocupacion_actual'];
-        $vinculacion_patrocinio = $_POST['vinculacion_patrocinio'];
-        $centro_formacion = $_POST['centro_formacion'];
-        $ficha = $_POST['ficha'];
-        $fecha_certificacion = $_POST['fecha_certificacion'];
-        $estudios_adicionales = $_POST['estudios_adicionales'];
-        $fecha_ultima_llamada = $_POST['fecha_ultima_llamada'];
-        $numero_fijo = $_POST['numero_fijo'];
-        $genero = $_POST['genero'];
-        $otro_telefono_contacto = $_POST['otro_telefono_contacto'];
-        $programa_formacion_id = $_POST['programa_formacion_id'];
+        $mes = $_POST['mes'] ?? '';
+        $nombres = $_POST['nombres'] ?? '';
+        $tipo_documento = $_POST['tipo_documento'] ?? '';
+        $numero_documento = $_POST['numero_documento'] ?? '';
+        $lugar_residencia = $_POST['lugar_residencia'] ?? '';
+        $direccion_residencia = $_POST['direccion_residencia'] ?? '';
+        $correo_electronico = $_POST['correo_electronico'] ?? '';
+        $telefono_celular = $_POST['telefono_celular'] ?? '';
+        $ocupacion_actual = $_POST['ocupacion_actual'] ?? '';
+        $vinculacion_patrocinio = $_POST['vinculacion_patrocinio'] ?? '';
+        $centro_formacion = $_POST['centro_formacion'] ?? '';
+        $ficha = $_POST['ficha'] ?? '';
+        $fecha_certificacion = $_POST['fecha_certificacion'] ?? '';
+        $estudios_adicionales = $_POST['estudios_adicionales'] ?? '';
+        $fecha_ultima_llamada = $_POST['fecha_ultima_llamada'] ?? '';
+        $numero_fijo = $_POST['numero_fijo'] ?? '';
+        $genero = $_POST['genero'] ?? '';
+        $otro_telefono_contacto = $_POST['otro_telefono_contacto'] ?? '';
+        $programa_formacion_id = $_POST['programa_formacion_id'] ?? '';
 
         // Actualizar los datos en la base de datos
-        $query = "UPDATE egresados SET MES = :mes, NOMBRES = :nombres, TipoDocumentoID = :tipo_documento, NumeroDocumento = :numero_documento, LugarResidenciaID = :lugar_residencia, DireccionResidencia = :direccion_residencia, CorreoElectronico = :correo_electronico, TelefonoCelular = :telefono_celular, OcupacionActual = :ocupacion_actual, VinculacionPatrocinio = :vinculacion_patrocinio, CentroFormacion = :centro_formacion, Ficha = :ficha, FechaCertificacion = :fecha_certificacion, EstudiosAdicionales = :estudios_adicionales, FechaUltimaLlamada = :fecha_ultima_llamada, NumeroFijo = :numero_fijo, Genero = :genero, OtroTelefonoContacto = :otro_telefono_contacto, ProgramaFormacionSENAID = :programa_formacion_id WHERE ID = :id";
+        $query = "UPDATE egresados 
+                  SET MES = :mes, 
+                      NOMBRES = :nombres, 
+                      TipoDocumentoID = :tipo_documento, 
+                      NumeroDocumento = :numero_documento, 
+                      LugarResidenciaID = :lugar_residencia, 
+                      DireccionResidencia = :direccion_residencia, 
+                      CorreoElectronico = :correo_electronico, 
+                      TelefonoCelular = :telefono_celular, 
+                      OcupacionActual = :ocupacion_actual, 
+                      VinculacionPatrocinio = :vinculacion_patrocinio, 
+                      CentroFormacion = :centro_formacion, 
+                      Ficha = :ficha, 
+                      FechaCertificacion = :fecha_certificacion, 
+                      EstudiosAdicionales = :estudios_adicionales, 
+                      FechaUltimaLlamada = :fecha_ultima_llamada, 
+                      NumeroFijo = :numero_fijo, 
+                      Genero = :genero, 
+                      OtroTelefonoContacto = :otro_telefono_contacto, 
+                      ProgramaFormacionSENAID = :programa_formacion_id 
+                  WHERE ID = :id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':mes', $mes);
         $stmt->bindParam(':nombres', $nombres);
@@ -65,15 +85,33 @@ if (isset($_GET['id'])) {
         // Ejecutar la actualización
         try {
             $stmt->execute();
-            // Redirigir de vuelta a la página de listado de egresados
-            header("Location: index.php");
+            // Redirigir de vuelta a la página de listado de egresados con SweetAlert
+            echo '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>';
+            echo '<script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        Swal.fire({
+                            title: "Actualización exitosa",
+                            text: "Los datos del egresado han sido actualizados.",
+                            icon: "success",
+                            confirmButtonText: "OK"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = "index.php";
+                            }
+                        });
+                    });
+                  </script>';
             exit();
         } catch (PDOException $e) {
             echo "Error al intentar actualizar el egresado: " . $e->getMessage();
         }
+        
     } else {
         // Obtener los datos actuales del egresado para mostrar en el formulario
-        $query = "SELECT * FROM egresados WHERE ID = :id";
+        $query = "SELECT e.*, l.Ciudad
+                  FROM egresados e
+                  LEFT JOIN lugarresidencia l ON e.LugarResidenciaID = l.ID
+                  WHERE e.ID = :id";
         $stmt = $db->prepare($query);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -89,6 +127,16 @@ if (isset($_GET['id'])) {
         $stmt_programas = $db->query($query_programas);
         $programas = $stmt_programas->fetchAll(PDO::FETCH_ASSOC);
 
+        // Obtener los lugares de residencia para el campo de selección
+        $query_lugares = "SELECT ID, Ciudad FROM lugarresidencia";
+        $stmt_lugares = $db->query($query_lugares);
+        $lugares = $stmt_lugares->fetchAll(PDO::FETCH_ASSOC);
+
+        // Función para manejar valores NULL
+        function handleNull($value) {
+            return $value === null ? '' : htmlspecialchars($value);
+        }
+
         // Mostrar los datos del egresado en el formulario
         ?>
         <!DOCTYPE html>
@@ -100,6 +148,7 @@ if (isset($_GET['id'])) {
             <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
             <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -130,130 +179,100 @@ if (isset($_GET['id'])) {
                     font-weight: bold;
                 }
                 input, select {
-                    margin-bottom: 15px;
-                    padding: 8px;
-                    border: 1px solid #d1bda1;
+                    padding: 10px;
+                    margin-bottom: 10px;
+                    border: 1px solid #ddd;
                     border-radius: 4px;
                 }
-                input[type="submit"] {
+                button {
+                    padding: 10px;
+                    border: none;
+                    border-radius: 4px;
                     background-color: #4CAF50;
-                    color: white;
-                    border: none;
-                    cursor: pointer;
-                    padding: 10px;
-                    border-radius: 4px;
-                }
-                input[type="submit"]:hover {
-                    background-color: #45a049;
-                }
-                .button-row {
-                    text-align: center;
-                    margin-top: 20px;
-                }
-                .btn-back {
-                    background-color: #2196F3;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    text-decoration: none;
-                    border-radius: 4px;
-                }
-                .btn-back:hover {
-                    background-color: #1976D2;
-                }
-                .back-button {
-                    position: absolute;
-                    top: 10px;
-                    left: 10px;
-                    background-color: #2196F3;
-                    color: white;
-                    border: none;
-                    padding: 10px;
-                    border-radius: 50%;
-                    cursor: pointer;
+                    color: #fff;
                     font-size: 16px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    cursor: pointer;
+                    margin-top: 10px;
                 }
-                .back-button:hover {
-                    background-color: #1976D2;
-                }
-                .back-button i {
-                    margin: 0;
+                button:hover {
+                    background-color: #45a049;
                 }
             </style>
         </head>
         <body>
             <div class="container">
-                <button class="back-button" onclick="window.location.href='index.php'">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
                 <h1>Actualizar Egresado</h1>
-                <form action="update.php?id=<?php echo htmlspecialchars($id); ?>" method="post">
-                    <!-- Campos del formulario -->
+                <form action="update.php?id=<?php echo htmlspecialchars($id); ?>" method="POST">
                     <label for="mes">Mes:</label>
-                    <input type="text" id="mes" name="mes" value="<?php echo htmlspecialchars($egresado['MES']); ?>">
+                    <input type="text" id="mes" name="mes" value="<?php echo handleNull($egresado['MES']); ?>">
 
                     <label for="nombres">Nombres:</label>
-                    <input type="text" id="nombres" name="nombres" value="<?php echo htmlspecialchars($egresado['NOMBRES']); ?>">
+                    <input type="text" id="nombres" name="nombres" value="<?php echo handleNull($egresado['NOMBRES']); ?>">
 
-                    <label for="tipo_documento">Tipo Documento:</label>
-                    <input type="text" id="tipo_documento" name="tipo_documento" value="<?php echo htmlspecialchars($egresado['TipoDocumentoID']); ?>">
+                    <label for="tipo_documento">Tipo de Documento:</label>
+                    <input type="text" id="tipo_documento" name="tipo_documento" value="<?php echo handleNull($egresado['TipoDocumentoID']); ?>">
 
-                    <label for="numero_documento">Número Documento:</label>
-                    <input type="text" id="numero_documento" name="numero_documento" value="<?php echo htmlspecialchars($egresado['NumeroDocumento']); ?>">
+                    <label for="numero_documento">Número de Documento:</label>
+                    <input type="text" id="numero_documento" name="numero_documento" value="<?php echo handleNull($egresado['NumeroDocumento']); ?>">
 
-                    <label for="lugar_residencia">Lugar Residencia:</label>
-                    <input type="text" id="lugar_residencia" name="lugar_residencia" value="<?php echo htmlspecialchars($egresado['LugarResidenciaID']); ?>">
+                    <label for="lugar_residencia">Lugar de Residencia:</label>
+                    <select id="lugar_residencia" name="lugar_residencia">
+                        <?php foreach ($lugares as $lugar): ?>
+                            <option value="<?php echo htmlspecialchars($lugar['ID']); ?>" <?php echo ($lugar['ID'] == $egresado['LugarResidenciaID']) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($lugar['Ciudad']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
 
-                    <label for="direccion_residencia">Dirección Residencia:</label>
-                    <input type="text" id="direccion_residencia" name="direccion_residencia" value="<?php echo htmlspecialchars($egresado['DireccionResidencia']); ?>">
+                    <label for="direccion_residencia">Dirección de Residencia:</label>
+                    <input type="text" id="direccion_residencia" name="direccion_residencia" value="<?php echo handleNull($egresado['DireccionResidencia']); ?>">
 
                     <label for="correo_electronico">Correo Electrónico:</label>
-                    <input type="email" id="correo_electronico" name="correo_electronico" value="<?php echo htmlspecialchars($egresado['CorreoElectronico']); ?>">
+                    <input type="email" id="correo_electronico" name="correo_electronico" value="<?php echo handleNull($egresado['CorreoElectronico']); ?>">
 
                     <label for="telefono_celular">Teléfono Celular:</label>
-                    <input type="text" id="telefono_celular" name="telefono_celular" value="<?php echo htmlspecialchars($egresado['TelefonoCelular']); ?>">
+                    <input type="text" id="telefono_celular" name="telefono_celular" value="<?php echo handleNull($egresado['TelefonoCelular']); ?>">
 
                     <label for="ocupacion_actual">Ocupación Actual:</label>
-                    <input type="text" id="ocupacion_actual" name="ocupacion_actual" value="<?php echo htmlspecialchars($egresado['OcupacionActual']); ?>">
+                    <input type="text" id="ocupacion_actual" name="ocupacion_actual" value="<?php echo handleNull($egresado['OcupacionActual']); ?>">
 
                     <label for="vinculacion_patrocinio">Vinculación Patrocinio:</label>
-                    <input type="text" id="vinculacion_patrocinio" name="vinculacion_patrocinio" value="<?php echo htmlspecialchars($egresado['VinculacionPatrocinio']); ?>">
+                    <input type="text" id="vinculacion_patrocinio" name="vinculacion_patrocinio" value="<?php echo handleNull($egresado['VinculacionPatrocinio']); ?>">
 
-                    <label for="centro_formacion">Centro Formación:</label>
-                    <input type="text" id="centro_formacion" name="centro_formacion" value="<?php echo htmlspecialchars($egresado['CentroFormacion']); ?>">
+                    <label for="centro_formacion">Centro de Formación:</label>
+                    <input type="text" id="centro_formacion" name="centro_formacion" value="<?php echo handleNull($egresado['CentroFormacion']); ?>">
 
                     <label for="ficha">Ficha:</label>
-                    <input type="text" id="ficha" name="ficha" value="<?php echo htmlspecialchars($egresado['Ficha']); ?>">
+                    <input type="text" id="ficha" name="ficha" value="<?php echo handleNull($egresado['Ficha']); ?>">
 
-                    <label for="fecha_certificacion">Fecha Certificación:</label>
-                    <input type="date" id="fecha_certificacion" name="fecha_certificacion" value="<?php echo htmlspecialchars($egresado['FechaCertificacion']); ?>">
+                    <label for="fecha_certificacion">Fecha de Certificación:</label>
+                    <input type="date" id="fecha_certificacion" name="fecha_certificacion" value="<?php echo handleNull($egresado['FechaCertificacion']); ?>">
 
                     <label for="estudios_adicionales">Estudios Adicionales:</label>
-                    <input type="text" id="estudios_adicionales" name="estudios_adicionales" value="<?php echo htmlspecialchars($egresado['EstudiosAdicionales']); ?>">
+                    <input type="text" id="estudios_adicionales" name="estudios_adicionales" value="<?php echo handleNull($egresado['EstudiosAdicionales']); ?>">
 
-                    <label for="fecha_ultima_llamada">Fecha Última Llamada:</label>
-                    <input type="date" id="fecha_ultima_llamada" name="fecha_ultima_llamada" value="<?php echo htmlspecialchars($egresado['FechaUltimaLlamada']); ?>">
+                    <label for="fecha_ultima_llamada">Fecha de Última Llamada:</label>
+                    <input type="date" id="fecha_ultima_llamada" name="fecha_ultima_llamada" value="<?php echo handleNull($egresado['FechaUltimaLlamada']); ?>">
 
                     <label for="numero_fijo">Número Fijo:</label>
-                    <input type="text" id="numero_fijo" name="numero_fijo" value="<?php echo htmlspecialchars($egresado['NumeroFijo']); ?>">
+                    <input type="text" id="numero_fijo" name="numero_fijo" value="<?php echo handleNull($egresado['NumeroFijo']); ?>">
 
                     <label for="genero">Género:</label>
-                    <input type="text" id="genero" name="genero" value="<?php echo htmlspecialchars($egresado['Genero']); ?>">
+                    <input type="text" id="genero" name="genero" value="<?php echo handleNull($egresado['Genero']); ?>">
 
                     <label for="otro_telefono_contacto">Otro Teléfono de Contacto:</label>
-                    <input type="text" id="otro_telefono_contacto" name="otro_telefono_contacto" value="<?php echo htmlspecialchars($egresado['OtroTelefonoContacto']); ?>">
+                    <input type="text" id="otro_telefono_contacto" name="otro_telefono_contacto" value="<?php echo handleNull($egresado['OtroTelefonoContacto']); ?>">
 
-                    <label for="programa_formacion_id">Programa de Formación SENA:</label>
+                    <label for="programa_formacion_id">Programa de Formación:</label>
                     <select id="programa_formacion_id" name="programa_formacion_id">
                         <?php foreach ($programas as $programa): ?>
-                            <option value="<?php echo htmlspecialchars($programa['ID']); ?>" <?php echo ($egresado['ProgramaFormacionSENAID'] == $programa['ID']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo htmlspecialchars($programa['ID']); ?>" <?php echo ($programa['ID'] == $egresado['ProgramaFormacionSENAID']) ? 'selected' : ''; ?>>
                                 <?php echo htmlspecialchars($programa['NombrePrograma']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
 
-                    <input type="submit" value="Actualizar">
+                    <button type="submit">Actualizar</button>
                 </form>
             </div>
         </body>
@@ -261,6 +280,6 @@ if (isset($_GET['id'])) {
         <?php
     }
 } else {
-    echo "ID no proporcionado.";
+    echo "ID no especificado.";
 }
 ?>

@@ -58,7 +58,7 @@ $result = $db->query($query);
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px;
             background-color: #f4f4f4;
         }
         .container {
@@ -68,7 +68,7 @@ $result = $db->query($query);
             padding: 20px;
             background: #fff;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             overflow-x: auto;
         }
         table {
@@ -84,14 +84,17 @@ $result = $db->query($query);
             text-align: left;
         }
         th {
-            background-color: #f5deb3;
-            color: #5f4b3a;
+            background-color: #66CC99;
+            color: white;
         }
         tr:nth-child(even) {
-            background-color: #f9f9f9;
+            background-color: #e0f2e9;
         }
         tr:nth-child(odd) {
-            background-color: #fff;
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #c8e6c9;
         }
         .header, .footer {
             padding: 10px 0;
@@ -100,36 +103,16 @@ $result = $db->query($query);
         .header img {
             height: 50px;
         }
-        .button-row {
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        .datetime {
-            font-size: 16px;
-            color: #555;
-        }
-        .actions {
-            text-align: center;
-        }
-        .btn-edit, .btn-delete {
-            margin: 0 5px;
-            padding: 5px 10px;
+        .delete-button {
+            background-color: #f44336;
+            color: white;
             border: none;
-            border-radius: 4px;
-            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
             cursor: pointer;
         }
-        .btn-edit {
-            background-color: #4CAF50;
-        }
-        .btn-edit:hover {
-            background-color: #45a049;
-        }
-        .btn-delete {
-            background-color: #f44336;
-        }
-        .btn-delete:hover {
-            background-color: #da190b;
+        .delete-button:hover {
+            background-color: #d32f2f;
         }
     </style>
 </head>
@@ -151,6 +134,7 @@ $result = $db->query($query);
             <div class="button-row">
                 <a href="create.php" class="btn-edit">Agregar Nuevos Egresados</a>
             </div>
+            
             <table id="egresadosTable" class="table table-striped table-bordered">
                 <thead>
                     <tr>
